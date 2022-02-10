@@ -44,7 +44,7 @@ pipeline{
                    -Dsonar.projectName=petclinic \
                    -Dsonar.projectVersion=1.0 \
                    -Dsonar.sources=src/ \
-                   -Dsonar.java.binaries=target/classes/org/springframework/samples/petclinic/**/ \
+                   -Dsonar.java.binaries=target/classes/org/springframework/samples/petclinic/model/,target/classes/org/springframework/samples/petclinic/owner/,target/classes/org/springframework/samples/petclinic/system/,target/classes/org/springframework/samples/petclinic/vet/,target/classes/org/springframework/samples/petclinic/visit/ \
                    -Dsonar.junit.reportsPath=target/surefire-reports/ \
                    -Dsonar.jacoco.reportsPath=target/jacoco.exec \
                    -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
