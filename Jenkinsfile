@@ -44,7 +44,6 @@ pipeline{
                    -Dsonar.projectName=petclinic \
                    -Dsonar.projectVersion=1.0 \
                    -Dsonar.sources=src/ \
-                   -Dsonar.java.binaries=target/test-classes/org/springframework/samples/petclinic/system/CrashControllerTests\
                    -Dsonar.junit.reportsPath=target/surefire-reports/ \
                    -Dsonar.jacoco.reportsPath=target/jacoco.exec \
                    -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
@@ -57,11 +56,14 @@ pipeline{
         stage ("docker build") {
             steps{
                 sh "docker build -t sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' ."
-                
             }
         }
         stage('Docker Publish') {
            steps {
+              // withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
+                //   sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
+                //   sh "docker push sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' "
+               // }
                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
                    sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
                    sh "docker push sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' "
