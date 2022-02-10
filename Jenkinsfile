@@ -14,6 +14,16 @@ pipeline{
                }
             }
         }
+        stage("Unit test"){
+            steps{
+               sh "mvn test"
+            }
+        }
+        stage("Integration test"){
+            steps{
+               sh "mvn verify -DskipUnitTests"
+            }
+        }
         stage ("static code analysis"){
             steps {
                 sh "mvn checkstyle:checkstyle"
@@ -33,8 +43,8 @@ pipeline{
                  sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=petclinic \
                    -Dsonar.projectName=petclinic \
                    -Dsonar.projectVersion=1.0 \
-                   -Dsonar.sources=src/main/java/org/springframework/samples/petclinic/PetClinicApplication.java \
-                   -Dsonar.java.binaries=target/classes/org/springframework/samples/petclinic/PetClinicApplication.class \
+                   -Dsonar.sources=src/main/java/org/springframework/samples/petclinic/ \
+                   -Dsonar.java.binaries=target/classes/org/springframework/samples/petclinic/ \
                    -Dsonar.junit.reportsPath=target/surefire-reports/ \
                    -Dsonar.jacoco.reportsPath=target/jacoco.exec \
                    -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
@@ -44,16 +54,7 @@ pipeline{
              }
           }
         }
-        stage("Unit test"){
-            steps{
-               sh "mvn test"
-            }
-        }
-        stage("Integration test"){
-            steps{
-               sh "mvn verify -DskipUnitTests"
-            }
-        }
+
         stage ("docker build") {
             steps{
                 sh "docker build -t sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' ."
