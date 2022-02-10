@@ -34,30 +34,17 @@ pipeline{
                 }
             }
         }
-        /*stage('CODE ANALYSIS with SONARQUBE') {
-          
-		  environment {
-             scannerHome = tool 'sonarscanner4'
-          }
-
+        stage('CODE ANALYSIS with SONARQUBE') {
           steps {
-            withSonarQubeEnv('sonar-pro') {
-               sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=petclinic \
-                   -Dsonar.projectName=petclinic-repo \
-                   -Dsonar.projectVersion=1.0 \
-                   -Dsonar.sources=src/ \
-                   -Dsonar.java.binaries= \
-                   -Dsonar.junit.reportsPath=target/surefire-reports/ \
-                   -Dsonar.jacoco.reportsPath=target/jacoco.exec \
-                   -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
-            }
-
-            timeout(time: 10, unit: 'MINUTES') {
-               waitForQualityGate abortPipeline: true
-            }
+             withSonarQubeEnv('sonar-qube') {
+                 sh 'mvn clean package sonar:sonar'
+              }
+              timeout(5) {
+                  waitForQualityGate abortPipeline: true
+             }
           }
         }
-        stage ("docker build") {
+        /*stage ("docker build") {
             steps{
                 sh "docker build -t sagar271992/petclinic:'${env.BUILD_NUMBER}' ."
             }
