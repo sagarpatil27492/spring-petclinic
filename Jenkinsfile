@@ -35,6 +35,9 @@ pipeline{
             }
         }
         stage('CODE ANALYSIS with SONARQUBE') {
+          environment {
+             scannerHome = tool 'sonarscanner4'
+            }
           steps {
              withSonarQubeEnv('sonar-qube') {
                  sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=petclinic \
