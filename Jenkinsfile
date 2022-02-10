@@ -14,7 +14,7 @@ pipeline{
                }
             }
         }
-    /*    stage ("static code analysis"){
+        stage ("static code analysis"){
             steps {
                 sh "mvn checkstyle:checkstyle"
             }
@@ -33,8 +33,6 @@ pipeline{
                  sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=petclinic \
                    -Dsonar.projectName=petclinic \
                    -Dsonar.projectVersion=1.0 \
-                   -Dsonar.sources=src/ \
-                   -Dsonar.java.binaries=target/classes/org/springframework/samples/petclinic/model/**.class,target/classes/org/springframework/samples/petclvisitinic/owner/**.class,target/classes/org/springframework/samples/petclinic/system/**.class,target/classes/org/springframework/samples/petclinic/vet/**.class,target/classes/org/springframework/samples/petclinic/visit/**.class,target/classes/org/springframework/samples/petclinic/PetClinicApplication.class \
                    -Dsonar.junit.reportsPath=target/surefire-reports/ \
                    -Dsonar.jacoco.reportsPath=target/jacoco.exec \
                    -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
@@ -53,7 +51,7 @@ pipeline{
             steps{
                sh "mvn verify -DskipUnitTests"
             }
-        }*/
+        }
         stage ("docker build") {
             steps{
                 sh "docker build -t sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' ."
@@ -61,16 +59,22 @@ pipeline{
         }
         stage('Docker Publish') {
            steps {
-              // withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
-                //   sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
-                //   sh "docker push sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' "
-               // }
                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
                    sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
                    sh "docker push sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' "
                 }
             }
         }
+
+        stage('Deploy') {
+           steps {
+               withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
+                   sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
+                   sh "docker run -d --name java-app-${env.BUILD_NUMBER}  --expose=3000 sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' "
+                }
+            }
+        }
+
 
 
     }
