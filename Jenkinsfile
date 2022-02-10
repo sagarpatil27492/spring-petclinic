@@ -37,7 +37,14 @@ pipeline{
         stage('CODE ANALYSIS with SONARQUBE') {
           steps {
              withSonarQubeEnv('sonar-qube') {
-                 sh 'mvn clean package sonar:sonar'
+                 sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=petclinic \
+                   -Dsonar.projectName=petclinic \
+                   -Dsonar.projectVersion=1.0 \
+                   -Dsonar.sources=src/ \
+                   -Dsonar.java.binaries=target/test-classes/org/springframework/samples/petclinic/system/CrashControllerTests\
+                   -Dsonar.junit.reportsPath=target/surefire-reports/ \
+                   -Dsonar.jacoco.reportsPath=target/jacoco.exec \
+                   -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
               }
               timeout(5) {
                   waitForQualityGate abortPipeline: true
