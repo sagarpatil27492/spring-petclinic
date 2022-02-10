@@ -56,7 +56,7 @@ pipeline{
         }*/
         stage ("docker build") {
             steps{
-                sh "docker build -t sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' ."
+                sh "sudo docker build -t sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' ."
             }
         }
         stage('Docker Publish') {
@@ -66,8 +66,8 @@ pipeline{
                 //   sh "docker push sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' "
                // }
                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
-                   sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
-                   sh "docker push sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' "
+                   sh "sudo docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
+                   sh "sudo docker push sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' "
                 }
             }
         }
