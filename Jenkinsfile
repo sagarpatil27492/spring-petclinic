@@ -14,17 +14,7 @@ pipeline{
                }
             }
         }
-        stage("Unit test"){
-            steps{
-               sh "mvn test"
-            }
-        }
-        stage("Integration test"){
-            steps{
-               sh "mvn verify -DskipUnitTests"
-            }
-        }
-        stage ("static code analysis"){
+    /*    stage ("static code analysis"){
             steps {
                 sh "mvn checkstyle:checkstyle"
             }
@@ -44,7 +34,7 @@ pipeline{
                    -Dsonar.projectName=petclinic \
                    -Dsonar.projectVersion=1.0 \
                    -Dsonar.sources=src/ \
-                   -Dsonar.java.binaries=target/classes/org/springframework/samples/petclinic/PetClinicApplication.class,target/classes/org/springframework/samples/petclinic/model/**.class,target/classes/org/springframework/samples/petclvisitinic/owner/**.class,target/classes/org/springframework/samples/petclinic/system/**.class,target/classes/org/springframework/samples/petclinic/vet/**.class,target/classes/org/springframework/samples/petclinic/visit/**.class \
+                   -Dsonar.java.binaries=target/classes/org/springframework/samples/petclinic/model/**.class,target/classes/org/springframework/samples/petclvisitinic/owner/**.class,target/classes/org/springframework/samples/petclinic/system/**.class,target/classes/org/springframework/samples/petclinic/vet/**.class,target/classes/org/springframework/samples/petclinic/visit/**.class,target/classes/org/springframework/samples/petclinic/PetClinicApplication.class \
                    -Dsonar.junit.reportsPath=target/surefire-reports/ \
                    -Dsonar.jacoco.reportsPath=target/jacoco.exec \
                    -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
@@ -54,6 +44,16 @@ pipeline{
              }
           }
         }
+        stage("Unit test"){
+            steps{
+               sh "mvn test"
+            }
+        }
+        stage("Integration test"){
+            steps{
+               sh "mvn verify -DskipUnitTests"
+            }
+        }*/
         stage ("docker build") {
             steps{
                 sh "docker build -t sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' ."
