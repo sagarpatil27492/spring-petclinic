@@ -14,7 +14,7 @@ pipeline{
                }
             }
         }
-        stage("Unit test"){
+       /*  stage("Unit test"){
             steps{
                sh "mvn test"
             }
@@ -34,7 +34,7 @@ pipeline{
                 }
             }
         }
-        /*stage('CODE ANALYSIS with SONARQUBE') {
+       stage('CODE ANALYSIS with SONARQUBE') {
           
 		  environment {
              scannerHome = tool 'sonarscanner4'
