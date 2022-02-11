@@ -34,27 +34,24 @@ pipeline{
                 }
             }
         }
-        /*stage('CODE ANALYSIS with SONARQUBE') {
-          
-		  environment {
+         stage('CODE ANALYSIS with SONARQUBE') {
+          environment {
              scannerHome = tool 'sonarscanner4'
-          }
-
+            }
           steps {
-            withSonarQubeEnv('sonar-pro') {
-               sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=petclinic \
-                   -Dsonar.projectName=petclinic-repo \
+             withSonarQubeEnv('sonar-qube') {
+                 sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=petclinic \
+                   -Dsonar.projectName=petclinic \
                    -Dsonar.projectVersion=1.0 \
                    -Dsonar.sources=src/ \
-                   -Dsonar.java.binaries= \
+                   -Dsonar.java.binaries=target/classes/ \
                    -Dsonar.junit.reportsPath=target/surefire-reports/ \
                    -Dsonar.jacoco.reportsPath=target/jacoco.exec \
                    -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
-            }
-
-            timeout(time: 10, unit: 'MINUTES') {
-               waitForQualityGate abortPipeline: true
-            }
+              }
+              timeout(5) {
+                  waitForQualityGate abortPipeline: true
+             }
           }
         }
         stage ("docker build") {
@@ -63,7 +60,7 @@ pipeline{
             }
         }
      
-        stage('Docker Publish') {
+        /*stage('Docker Publish') {
            steps {
                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
                    sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
