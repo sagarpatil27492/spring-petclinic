@@ -50,9 +50,10 @@ pipeline{
                    -Dsonar.jacoco.reportsPath=target/jacoco.exec \
                    -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
               }
-              timeout(5) {
-                  waitForQualityGate abortPipeline: true
-             }
+              def qualitygate = waitForQualityGate()
+              if (qualitygate.status != "OK") {
+                 error "Pipeline aborted due to quality gate coverage failure: ${qualitygate.status}"
+              }
           }
         }
 
