@@ -54,17 +54,26 @@ pipeline{
              }
           }
         }
-         stage ("docker build") {
+
+        stage ("docker build") {
             steps{
-                sh "docker build -t sagar271992/petclinic:'${env.BUILD_NUMBER}' ."
+                sh "docker build -t sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' ."
             }
         }
-     
         stage('Docker Publish') {
            steps {
                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
                    sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
-                   sh "docker push sagar271992/petclinic:'${env.BUILD_NUMBER}' "
+                   sh "docker push sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' "
+                }
+            }
+        }
+
+        stage('Deploy') {
+           steps {
+               withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
+                   sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
+                   sh "docker run -d --name java-app-${env.BUILD_NUMBER}  --expose=3000 sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' "
                 }
             }
         }
