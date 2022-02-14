@@ -74,7 +74,7 @@ pipeline{
            steps {
                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
                    sh "sudo docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
-                   sh "sudo docker run -d --name java-app-main-${env.BUILD_NUMBER}  -p 3000:80 sagarppatil27041992/main:'${env.BUILD_NUMBER}' "
+                   sh "sudo docker run -d --name java-app-main-${env.BUILD_NUMBER}  -p 3000:8080 sagarppatil27041992/main:'${env.BUILD_NUMBER}' "
                 }
             }
         }
