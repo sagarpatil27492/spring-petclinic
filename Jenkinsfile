@@ -40,8 +40,8 @@ pipeline{
             }
           steps {
              withSonarQubeEnv('sonar-qube') {
-                 sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=petclinic-devlop \
-                   -Dsonar.projectName=petclinic-devlop \
+                 sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=petclinic \
+                   -Dsonar.projectName=petclinic \
                    -Dsonar.projectVersion=1.0 \
                    -Dsonar.sources=src/ \
                    -Dsonar.java.binaries=target/classes/ \
