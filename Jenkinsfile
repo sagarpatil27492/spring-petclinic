@@ -49,22 +49,22 @@ pipeline{
                    -Dsonar.jacoco.reportsPath=target/jacoco.exec \
                    -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
               }
-              timeout(5) {
-                  waitForQualityGate abortPipeline: true
+             timeout(time: 10, unit: 'MINUTES') {
+               waitForQualityGate abortPipeline: true
              }
           }
         }
 
         stage ("docker build") {
             steps{
-                sh "docker build -t sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' ."
+                sh "sudo docker build -t sagarppatil27041992/develop:'${env.BUILD_NUMBER}' ."
             }
         }
         stage('Docker Publish') {
            steps {
                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
-                   sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
-                   sh "docker push sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' "
+                   sh "sudo docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
+                   sh "sudo docker push sagarppatil27041992/develop:'${env.BUILD_NUMBER}' "
                 }
             }
         }
@@ -72,8 +72,8 @@ pipeline{
         stage('Deploy') {
            steps {
                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
-                   sh "docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
-                   sh "docker run -d --name java-app-${env.BUILD_NUMBER}  --expose=3000 sagarppatil27041992/petclinic:'${env.BUILD_NUMBER}' "
+                   sh "sudo docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
+                   sh "sudo docker run -d --name java-app-${env.BUILD_NUMBER}  -p 3000:80 sagarppatil27041992/develop:'${env.BUILD_NUMBER}' "
                 }
             }
         }
