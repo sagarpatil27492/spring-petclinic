@@ -5,6 +5,7 @@ pipeline{
     tools {
         jdk 'jdk-8'
         maven 'maven-3.8'
+        // tool we configured in jenkins we are providing there name here
     }
     
     stages{
@@ -12,22 +13,27 @@ pipeline{
             steps{
                withMaven (maven:'maven-3.8') {
                    sh "mvn clean install -DskipTests"
+                   // we package the artifact jar of our java project and skip all the test with maven goal "maven clean install -DskipTests"
                }
             }
         }
         stage("Unit test"){
             steps{
                sh "mvn test"
+               // here we perform all unit test cases
             }
         }
         stage("Integration test"){
             steps{
                sh "mvn verify -DskipUnitTests"
+               // here we perform all integration test with maven goal "mvn verify -DskipUnitTests" and skip again all unit test cases
+
             }
         }
         stage ("static code analysis"){
             steps {
                 sh "mvn checkstyle:checkstyle"
+                // here we perform the checkstyle static code analysis with maven goal "mvn checkstyle:checkstyle"
             }
             post {
                 success {
@@ -49,9 +55,12 @@ pipeline{
                    -Dsonar.junit.reportsPath=target/surefire-reports/ \
                    -Dsonar.jacoco.reportsPath=target/jacoco.exec \
                    -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
+
+                // we ferform code analysis using sonarqube by passing the unit test cases result, checkstyle result for uploading and doing code analysis
               }
              timeout(time: 10, unit: 'MINUTES') {
                waitForQualityGate abortPipeline: true
+               // here we wait for quality gates from sonar server
              }
           }
         }
@@ -59,13 +68,16 @@ pipeline{
         stage ("docker build") {
             steps{
                 sh "sudo docker build -t sagarppatil27041992/main:'${env.BUILD_NUMBER}' ."
+                // we build the docker image of our apllication and tageed that image with build no env variable
             }
         }
         stage('Docker Publish') {
            steps {
                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
                    sh "sudo docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
+                   // make a login to docker hub registry using docker credential
                    sh "sudo docker push sagarppatil27041992/main:'${env.BUILD_NUMBER}' "
+                // we push the docker image to dockerhub registry that we build in privious steps 
                 }
             }
         }
@@ -74,7 +86,9 @@ pipeline{
            steps {
                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
                    sh "sudo docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
-                   sh "sudo docker run -d --name java-app-main-${env.BUILD_NUMBER}  -p 3000:8080 sagarppatil27041992/main:'${env.BUILD_NUMBER}' "
+                   sh "sudo docker run -d --name java-app-main-${env.BUILD_NUMBER}  -p 3000:8080 sagarppatil27041992/main:'${env.BUILD_NUMBER}' "                // we push the docker image to dockerhub registry that we build in privious steps 
+                // we run the docker imaage  that we build in privious steps 
+
                 }
             }
         }
