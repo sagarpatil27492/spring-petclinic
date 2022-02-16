@@ -6,6 +6,14 @@ pipeline{
         maven 'maven-3.8'
         // tool we configured in jenkins we are providing there name here
     }
+    environment {
+        imageName = "sprint-service"
+        dev= 'dev-'
+        blank= ''
+        Tags= '$BUILD_NUMBER'
+        dockerHubRegistry = 'sagarppatil27041992'
+        versionTags= 'sprint-service:0.1.0'
+    }
     
     stages{
         stage("Dev-build"){
@@ -89,8 +97,9 @@ pipeline{
             }
             options { skipDefaultCheckout() }
             steps{
-                sh "sudo docker build -t sagarppatil27041992/develop:'${env.BUILD_NUMBER}' ."
+                //sh "sudo docker build -t sagarppatil27041992/develop:'${env.BUILD_NUMBER}' ."
                 // we build the docker image of our apllication and tageed that image with build no env variable
+                imageBuild(dockerHubRegistry,dev,imageName,Tags) // calling image build function
             }
         }
         stage('Dev-Docker Publish') {
@@ -122,6 +131,55 @@ pipeline{
                 }
             }
         }
+        stage('Push GitTag') {
+            when {
+                branch 'main'
+            }
+            steps {
+                withCredentials([usernameColonPassword(credentialsId: 'github-cred', variable: 'github')]) {
+                   sh  "git tag $versionTags"
+                   sh "git push --tag"
+                }
+            }
+        }
+        stage ("build-docker build") {
+            when {
+                branch 'main'   
+            }
+            options { skipDefaultCheckout() }
+            steps{
+                // we build the docker image of our apllication and tageed that image with build no env variable
+                //sh "sudo docker build -t sagarppatil27041992/develop:'${env.BUILD_NUMBER}' ."
+                imageBuild(dockerHubRegistry,dev,imageName,Tags) // calling image build function
+                
+            }
+        }
     }
 
+}
+
+// define function to build docker images
+void imageBuild(registry,env,imageName,Tags) {
+    
+    sh "docker build --rm -t $registry/$env$imageName:$Tags --pull --no-cache . -f $imageName'Dockerfile'"
+    echo "Image build complete"
+}
+
+
+// define function to push images
+void pushToImage(registry,env,imageName, dockerUser, dockerPassword,Tags) {
+    
+    sh "docker login $registry -u $dockerUser -p $dockerPassword" 
+    //sh "docker tag $env-$imageName:${BUILD_NUMBER} $registry/$env-$imageName:${BUILD_NUMBER}"
+    //sh "docker tag $registry/$env$imageName:$Tags $registry/$env$imageName:latest"
+    sh "docker push $registry/$env$imageName:$Tags"
+    echo "Image Push $registry/$env$imageName:$Tags completed"
+    //sh "docker push $registry/$env$imageName:latest"
+    //echo "Image Push $registry/$env$imageName:latest completed"   
+}
+
+void deleteImages(registry,env,imageName,Tags) {
+    //sh "docker rmi $registry/$env$imageName:latest"
+    sh "docker rmi $registry/$env$imageName:$Tags"
+    echo "Images deleted"
 }
