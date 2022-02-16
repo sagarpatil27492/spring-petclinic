@@ -21,7 +21,7 @@ pipeline{
                 branch 'develop'    
             }
             steps{
-               withMaven (maven:'maven-3.8') {
+               withMaven (options: [concordionPublisher(disabled: true), findbugsPublisher(disabled: true), dependenciesFingerprintPublisher(disabled: true), artifactsPublisher(disabled: true), invokerPublisher(disabled: true), junitPublisher(disabled: true, ignoreAttachments: false), openTasksPublisher(disabled: true), pipelineGraphPublisher(disabled: true)], maven:'maven-3.8') {
                    sh "mvn clean install -DskipTests"
                    // we package the artifact jar of our java project and skip all the test with maven goal "maven clean install -DskipTests"
                }
