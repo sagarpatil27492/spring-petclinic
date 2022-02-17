@@ -124,10 +124,9 @@ pipeline{
             options { skipDefaultCheckout() }
             steps {
                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
-                   sh "sudo docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
-                   sh "sudo docker run -d --name java-app-develop-${env.BUILD_NUMBER}  -p 3001:8080 sagarppatil27041992/develop:'${env.BUILD_NUMBER}' "
-                // we run the docker imaage  that we build in privious steps 
-
+                   
+                   // we run the docker imaage  that we build in privious steps 
+                    deploy(dockerHubRegistryID,dev,dockerHubUser,dockerHubPassword,Tags)
                 }
             }
         }
@@ -175,10 +174,13 @@ void pushToImage(registry,env,dockerUser,dockerPassword,Tags) {
 }
 
 void deleteImages(registry,env,Tags) {
-    echo "$registry"
-    echo "$env"
-    echo "$Tags"
 
     sh "sudo docker rmi $registry/$env:$Tags"
     echo "Images deleted"
+}
+
+void deploy(registry,env,dockerUser,dockerPassword,Tags){
+    sh "sudo docker login -u $dockerUser -p $dockerPassword "
+    sh "sudo docker run -d --name java-app-$env-$Tag -p 3001:8080 $registry/$env:$Tags "
+        
 }
