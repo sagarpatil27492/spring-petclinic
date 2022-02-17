@@ -12,7 +12,7 @@ pipeline{
         staging='stage'
         Tags= '$BUILD_NUMBER'
         dockerHubRegistryID = 'sagarppatil27041992'
-        versionTags= 'release-V1.0'
+        versionTags= versiontags()
     }
     
     stages{
@@ -182,3 +182,8 @@ void deploy(registry,env,dockerUser,dockerPassword,Tags){
     sh "sudo docker login -u $dockerUser -p $dockerPassword "
     sh "sudo docker run -d --name java-app-$env-$Tags -p 3001:8080 $registry/$env:$Tags "   
 }
+void versiontags() {
+    def tag= "Rleease-V-$Tags-0.0"
+   return tag
+}
+
