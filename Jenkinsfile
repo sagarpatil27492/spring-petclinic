@@ -109,7 +109,7 @@ pipeline{
                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
                 pushToImage(dockerHubRegistryID,dev, dockerHubUser, dockerHubPassword,Tags)
                 // calling pushToImage function to push image for dev envoirment to dockerhub registry
-                deleteImages(dockerHubRegistryID,dev,Tags) // remove the image once its pushed to dockerhub registry from local
+               // deleteImages(dockerHubRegistryID,dev,Tags) // remove the image once its pushed to dockerhub registry from local
                 }
             }
         }
@@ -164,10 +164,10 @@ void imageBuild(registry,env,Tags) {
 
 
 // define function to push images
-void pushToImage(registryID,env, dockerUser, dockerPassword,Tags) {
+void pushToImage(registry,env, dockerUser, dockerPassword,Tags) {
     
     sh "sudo docker login -u $dockerUser -p $dockerPassword " 
-    sh "sudo docker push $registryID/$env:$Tags"
+    sh "sudo docker push $registry/$env:$Tags"
     echo "Image Push $registry/$env:$Tags completed"
 }
 
