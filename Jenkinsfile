@@ -7,11 +7,11 @@ pipeline{
         // tool we configured in jenkins we are providing there name here
     }
     environment {
-        imageName = "sprint-service"
         dev= 'develop'
         blank= ''
         Tags= '$BUILD_NUMBER'
-        dockerHubRegistry = 'sagarppatil27041992'
+        dockerHubRegistryID = 'sagarppatil27041992'
+        dockerHubRegistry = 'https://login.docker.com'
         versionTags= 'sprint-service:0.1.0'
     }
     
@@ -97,7 +97,7 @@ pipeline{
             }
             options { skipDefaultCheckout() }
             steps{
-                imageBuild(dockerHubRegistry,dev,Tags) // calling image build function to build image for dev envoirment
+                imageBuild(dockerHubRegistryID,dev,Tags) // calling image build function to build image for dev envoirment
             }
         }
         stage('Dev-Docker Publish') {
@@ -107,7 +107,7 @@ pipeline{
             options { skipDefaultCheckout() }
             steps {
                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
-                pushToImage(dockerHubRegistry,env, dockerHubUser, dockerHubPassword,Tags) 
+                pushToImage(dockerHubRegistry,dockerHubRegistryID,env, dockerHubUser, dockerHubPassword,Tags) 
                 // calling pushToImage function to push image for dev envoirment to dockerhub registry
                 deleteImages(dockerHubRegistry,env,Tags) // remove the image once its pushed to dockerhub registry from local
                 }
@@ -164,10 +164,10 @@ void imageBuild(registry,env,Tags) {
 
 
 // define function to push images
-void pushToImage(registry,env, dockerUser, dockerPassword,Tags) {
+void pushToImage(registry,registryID,env, dockerUser, dockerPassword,Tags) {
     
     sh "sudo docker login $registry -u $dockerUser -p $dockerPassword" 
-    sh "sudo docker push $registry/$env:$Tags"
+    sh "sudo docker push $registryID/$env:$Tags"
     echo "Image Push $registry/$env:$Tags completed"
 }
 
