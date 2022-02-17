@@ -8,6 +8,8 @@ pipeline{
     }
     environment {
         dev= 'develop'
+        qa= 'main'
+        staging='stage'
         Tags= '$BUILD_NUMBER'
         dockerHubRegistryID = 'sagarppatil27041992'
         versionTags= 'sprint5-service:0.1.0'
@@ -147,7 +149,7 @@ pipeline{
             steps{
                 // we build the docker image of our apllication and tageed that image with build no env variable
                 //sh "sudo docker build -t sagarppatil27041992/develop:'${env.BUILD_NUMBER}' ."
-                imageBuild(dockerHubRegistry,dev,imageName,Tags) // calling image build function
+                imageBuild(dockerHubRegistryID,qa,Tags) // calling image build function
                 
             }
         }
