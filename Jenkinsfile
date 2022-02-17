@@ -12,7 +12,7 @@ pipeline{
         staging='stage'
         Tags= '$BUILD_NUMBER'
         dockerHubRegistryID = 'sagarppatil27041992'
-        versionTags= 'sprint5-service:0.1.0'
+        versionTags= 'release-V1.0'
     }
     
     stages{
