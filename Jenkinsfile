@@ -1,4 +1,3 @@
-
 pipeline{
     agent any
 
@@ -7,9 +6,17 @@ pipeline{
         maven 'maven-3.8'
         // tool we configured in jenkins we are providing there name here
     }
+    environment {
+        dev= 'develop'
+        qa= 'main'
+        staging='stage'
+        Tags= '$BUILD_NUMBER'
+        dockerHubRegistryID = 'sagarppatil27041992'
+        versionTags= 'sprint5-service:0.1.0'
+    }
     
     stages{
-        stage("build"){
+        stage("Dev-build"){
             when {
                 branch 'develop'    
             }
@@ -20,29 +27,32 @@ pipeline{
                }
             }
         }
-        stage("Unit test"){
+        stage("Dev-Unit test"){
             when {
                 branch 'develop'   
             }
+            options { skipDefaultCheckout() }
             steps{
                sh "mvn test"
                // here we perform all unit test cases
             }
         }
-        stage("Integration test"){
+        stage("Dev-Integration test"){
             when {
                 branch 'develop'   
             }
+            options { skipDefaultCheckout() }
             steps{
                sh "mvn verify -DskipUnitTests"
                // here we perform all integration test with maven goal "mvn verify -DskipUnitTests" and skip again all unit test cases
 
             }
         }
-        stage ("static code analysis"){
+        stage ("Dev-static code analysis"){
             when {
                 branch 'develop'   
             }
+            options { skipDefaultCheckout() }
             steps {
                 sh "mvn checkstyle:checkstyle"
                 // here we perform the checkstyle static code analysis with maven goal "mvn checkstyle:checkstyle"
@@ -53,10 +63,11 @@ pipeline{
                 }
             }
         }
-         stage('CODE ANALYSIS with SONARQUBE') {
+         stage('DEV-CODE ANALYSIS with SONARQUBE') {
             when {
                 branch 'develop'   
             }
+            options { skipDefaultCheckout() }
             environment {
              scannerHome = tool 'sonarscanner4'
             }
@@ -80,42 +91,95 @@ pipeline{
           }
         }
 
-        stage ("docker build") {
+        stage ("Dev-docker build") {
             when {
                 branch 'develop'   
             }
+            options { skipDefaultCheckout() }
             steps{
-                sh "sudo docker build -t sagarppatil27041992/main:'${env.BUILD_NUMBER}' ."
+                imageBuild(dockerHubRegistryID,dev,Tags) // calling image build function to build image for dev envoirment
+            }
+        }
+        stage('Dev-Docker Publish') {
+            when {
+                branch 'develop'   
+            }
+            options { skipDefaultCheckout() }
+            steps {
+               withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
+                   // calling pushToImage function to push image for dev envoirment to dockerhub registry
+                    pushToImage(dockerHubRegistryID,dev,dockerHubUser,dockerHubPassword,Tags)
+                
+                    // remove the image once its pushed to dockerhub registry from local
+                    deleteImages(dockerHubRegistryID,dev,Tags) 
+
+                }
+            }
+        }
+
+        stage('Dev-Deploy') {
+            when {
+                branch 'develop'   
+            }
+            options { skipDefaultCheckout() }
+            steps {
+               withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
+                   
+                   // we run the docker imaage  that we build in privious steps 
+                    deploy(dockerHubRegistryID,dev,dockerHubUser,dockerHubPassword,Tags)
+                }
+            }
+        }
+        stage('Push GitTag') {
+            when {
+                branch 'main'
+            }
+            steps {
+                withCredentials([usernameColonPassword(credentialsId: 'github-cred', variable: 'github')]) {
+                   sh  "git tag $versionTags"
+                   sh "git push --tag"
+                }
+            }
+        }
+        stage ("build-docker build") {
+            when {
+                branch 'main'   
+            }
+            options { skipDefaultCheckout() }
+            steps{
                 // we build the docker image of our apllication and tageed that image with build no env variable
-            }
-        }
-        stage('Docker Publish') {
-            when {
-                branch 'develop'   
-            }
-            steps {
-               withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
-                   sh "sudo docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
-                   // make a login to docker hub registry using docker credential
-                   sh "sudo docker push sagarppatil27041992/main:'${env.BUILD_NUMBER}' "
-                // we push the docker image to dockerhub registry that we build in privious steps 
-                }
-            }
-        }
-
-        stage('Deploy') {
-            when {
-                branch 'develop'   
-            }
-            steps {
-               withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
-                   sh "sudo docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
-                   sh "sudo docker run -d --name java-app-main-${env.BUILD_NUMBER}  -p 3000:8080 sagarppatil27041992/main:'${env.BUILD_NUMBER}' "                // we push the docker image to dockerhub registry that we build in privious steps 
-                // we run the docker imaage  that we build in privious steps 
-
-                }
+                //sh "sudo docker build -t sagarppatil27041992/develop:'${env.BUILD_NUMBER}' ."
+                imageBuild(dockerHubRegistryID,qa,Tags) // calling image build function
+                
             }
         }
     }
 
+}
+
+// define function to build docker images
+void imageBuild(registry,env,Tags) {
+    
+    sh "sudo docker build --rm -t $registry/$env:$Tags --pull --no-cache . "
+    echo "Image build complete"
+}
+
+
+// define function to push images
+void pushToImage(registry,env,dockerUser,dockerPassword,Tags) {
+    
+    sh "sudo docker login -u $dockerUser -p $dockerPassword " 
+    sh "sudo docker push $registry/$env:$Tags"
+    echo "Image Push $registry/$env:$Tags completed"
+}
+
+void deleteImages(registry,env,Tags) {
+
+    sh "sudo docker rmi $registry/$env:$Tags"
+    echo "Images deleted"
+}
+
+void deploy(registry,env,dockerUser,dockerPassword,Tags){
+    sh "sudo docker login -u $dockerUser -p $dockerPassword "
+    sh "sudo docker run -d --name java-app-$env-$Tags -p 3001:8080 $registry/$env:$Tags "   
 }
