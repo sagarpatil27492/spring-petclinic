@@ -135,7 +135,7 @@ pipeline{
                 branch 'main'
             }
             steps {
-                withCredentials([usernameColonPassword(credentialsId: 'github-cred', variable: 'github')]) {
+                withCredentials([gitUsernamePassword(credentialsId: 'github-cred', gitToolName: 'Default')]) {
                    sh  "git tag $versionTags"
                    sh "git push origin $versionTags"
                 }
