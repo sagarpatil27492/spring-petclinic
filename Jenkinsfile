@@ -148,6 +148,10 @@ pipeline{
             steps{
                 // we build the docker image of our apllication and tageed that image with build no env variable
                 //sh "sudo docker build -t sagarppatil27041992/develop:'${env.BUILD_NUMBER}' ."
+                withMaven (maven:'maven-3.8') {
+                   sh "mvn clean install -DskipTests"
+                   // we package the artifact jar of our java project and skip all the test with maven goal "maven clean install -DskipTests"
+                }
                 imageBuild(dockerHubRegistryID,qa,Tags) // calling image build function
                 
             }
