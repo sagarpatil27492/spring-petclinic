@@ -158,7 +158,7 @@ pipeline{
 // define function to build docker images
 void imageBuild(registry,env,Tags) {
     
-    sh "docker build --rm -t $registry/$env:$Tags --pull --no-cache . "
+    sh "sudo docker build --rm -t $registry/$env:$Tags --pull --no-cache . "
     echo "Image build complete"
 }
 
@@ -166,13 +166,13 @@ void imageBuild(registry,env,Tags) {
 // define function to push images
 void pushToImage(registry,env, dockerUser, dockerPassword,Tags) {
     
-    sh "docker login $registry -u $dockerUser -p $dockerPassword" 
+    sh "sudo docker login $registry -u $dockerUser -p $dockerPassword" 
     sh "sudo docker push $registry/$env:$Tags"
     echo "Image Push $registry/$env:$Tags completed"
 }
 
 void deleteImages(registry,env,Tags) {
     //sh "docker rmi $registry/$env$imageName:latest"
-    sh "docker rmi $registry/$env:$Tags"
+    sh "sudo docker rmi $registry/$env:$Tags"
     echo "Images deleted"
 }
