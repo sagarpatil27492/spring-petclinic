@@ -179,5 +179,5 @@ void deleteImages(registry,env,Tags) {
 
 void deploy(registry,env,dockerUser,dockerPassword,Tags){
     sh "sudo docker login -u $dockerUser -p $dockerPassword "
-    sh "sudo docker run -d --name java-app-$env-$Tag -p 3001:8080 $registry/$env:$Tags "   
+    sh "sudo docker run -d --name java-app-$env-$Tags -p 3001:8080 $registry/$env:$Tags "   
 }
