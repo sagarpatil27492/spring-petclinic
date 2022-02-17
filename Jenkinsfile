@@ -130,7 +130,7 @@ pipeline{
                 }
             }
         }
-        stage('Push GitTag') {
+       /*  stage('Push GitTag') {
             when {
                 branch 'main'
             }
@@ -140,12 +140,11 @@ pipeline{
                    sh "git push origin $versionTags"
                 }
             }
-        }
-        stage ("build-docker build") {
+        } */
+        stage ("BuildDockerImage") {
             when {
                 branch 'main'   
             }
-            options { skipDefaultCheckout() }
             steps{
                 // we build the docker image of our apllication and tageed that image with build no env variable
                 //sh "sudo docker build -t sagarppatil27041992/develop:'${env.BUILD_NUMBER}' ."
