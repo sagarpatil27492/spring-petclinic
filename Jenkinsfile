@@ -8,7 +8,7 @@ pipeline{
     }
     environment {
         imageName = "sprint-service"
-        dev= 'dev-'
+        dev= 'develop'
         blank= ''
         Tags= '$BUILD_NUMBER'
         dockerHubRegistry = 'sagarppatil27041992'
@@ -97,9 +97,7 @@ pipeline{
             }
             options { skipDefaultCheckout() }
             steps{
-                //sh "sudo docker build -t sagarppatil27041992/develop:'${env.BUILD_NUMBER}' ."
-                // we build the docker image of our apllication and tageed that image with build no env variable
-                imageBuild(dockerHubRegistry,dev,imageName,Tags) // calling image build function
+                imageBuild(dockerHubRegistry,dev,Tags) // calling image build function to build image for dev envoirment
             }
         }
         stage('Dev-Docker Publish') {
@@ -109,10 +107,9 @@ pipeline{
             options { skipDefaultCheckout() }
             steps {
                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
-                   sh "sudo docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
-                   // make a login to docker hub registry using docker credential
-                   sh "sudo docker push sagarppatil27041992/develop:'${env.BUILD_NUMBER}' "
-                // we push the docker image to dockerhub registry that we build in privious steps 
+                pushToImage(dockerHubRegistry,env, dockerHubUser, dockerHubPassword,Tags) 
+                // calling pushToImage function to push image for dev envoirment to dockerhub registry
+                deleteImages(dockerHubRegistry,env,Tags) // remove the image once its pushed to dockerhub registry from local
                 }
             }
         }
@@ -159,27 +156,23 @@ pipeline{
 }
 
 // define function to build docker images
-void imageBuild(registry,env,imageName,Tags) {
+void imageBuild(registry,env,Tags) {
     
-    sh "docker build --rm -t $registry/$env$imageName:$Tags --pull --no-cache . -f $imageName'Dockerfile'"
+    sh "docker build --rm -t $registry/$env:$Tags --pull --no-cache . "
     echo "Image build complete"
 }
 
 
 // define function to push images
-void pushToImage(registry,env,imageName, dockerUser, dockerPassword,Tags) {
+void pushToImage(registry,env, dockerUser, dockerPassword,Tags) {
     
     sh "docker login $registry -u $dockerUser -p $dockerPassword" 
-    //sh "docker tag $env-$imageName:${BUILD_NUMBER} $registry/$env-$imageName:${BUILD_NUMBER}"
-    //sh "docker tag $registry/$env$imageName:$Tags $registry/$env$imageName:latest"
-    sh "docker push $registry/$env$imageName:$Tags"
-    echo "Image Push $registry/$env$imageName:$Tags completed"
-    //sh "docker push $registry/$env$imageName:latest"
-    //echo "Image Push $registry/$env$imageName:latest completed"   
+    sh "sudo docker push $registry/$env:$Tags"
+    echo "Image Push $registry/$env:$Tags completed"
 }
 
-void deleteImages(registry,env,imageName,Tags) {
+void deleteImages(registry,env,Tags) {
     //sh "docker rmi $registry/$env$imageName:latest"
-    sh "docker rmi $registry/$env$imageName:$Tags"
+    sh "docker rmi $registry/$env:$Tags"
     echo "Images deleted"
 }
