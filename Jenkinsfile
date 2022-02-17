@@ -107,9 +107,12 @@ pipeline{
             options { skipDefaultCheckout() }
             steps {
                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
-                pushToImage(dockerHubRegistryID,dev, dockerHubUser, dockerHubPassword,Tags)
-                // calling pushToImage function to push image for dev envoirment to dockerhub registry
-               // deleteImages(dockerHubRegistryID,dev,Tags) // remove the image once its pushed to dockerhub registry from local
+                   // calling pushToImage function to push image for dev envoirment to dockerhub registry
+                    pushToImage(dockerHubRegistryID,dev,dockerHubUser,dockerHubPassword,Tags)
+                
+                    // remove the image once its pushed to dockerhub registry from local
+                    deleteImages(dockerHubRegistryID,dev,Tags) 
+
                 }
             }
         }
@@ -164,7 +167,7 @@ void imageBuild(registry,env,Tags) {
 
 
 // define function to push images
-void pushToImage(registry,env, dockerUser, dockerPassword,Tags) {
+void pushToImage(registry,env,dockerUser,dockerPassword,Tags) {
     
     sh "sudo docker login -u $dockerUser -p $dockerPassword " 
     sh "sudo docker push $registry/$env:$Tags"
@@ -172,7 +175,10 @@ void pushToImage(registry,env, dockerUser, dockerPassword,Tags) {
 }
 
 void deleteImages(registry,env,Tags) {
-    //sh "docker rmi $registry/$env$imageName:latest"
+    echo "$registry"
+    echo "$env"
+    echo "$Tags"
+
     sh "sudo docker rmi $registry/$env:$Tags"
     echo "Images deleted"
 }
