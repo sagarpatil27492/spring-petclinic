@@ -12,7 +12,7 @@ pipeline{
         staging='stage'
         Tags= '$BUILD_NUMBER'
         dockerHubRegistryID = 'sagarppatil27041992'
-        versionTags= versiontags()
+        versionTags= versiontags(Tags)
     }
     
     stages{
@@ -130,7 +130,7 @@ pipeline{
                 }
             }
         }
-        stage('Push GitTag') {
+       /*  stage('Push GitTag') {
             when {
                 branch 'main'
             }
@@ -140,15 +140,18 @@ pipeline{
                    sh "git push origin $versionTags"
                 }
             }
-        }
-        stage ("build-docker build") {
+        } */
+        stage ("BuildDockerImage") {
             when {
                 branch 'main'   
             }
-            options { skipDefaultCheckout() }
             steps{
                 // we build the docker image of our apllication and tageed that image with build no env variable
                 //sh "sudo docker build -t sagarppatil27041992/develop:'${env.BUILD_NUMBER}' ."
+                withMaven (maven:'maven-3.8') {
+                   sh "mvn clean install -DskipTests"
+                   // we package the artifact jar of our java project and skip all the test with maven goal "maven clean install -DskipTests"
+                }
                 imageBuild(dockerHubRegistryID,qa,Tags) // calling image build function
                 
             }
@@ -183,8 +186,7 @@ void deploy(registry,env,dockerUser,dockerPassword,Tags){
     sh "sudo docker login -u $dockerUser -p $dockerPassword "
     sh "sudo docker run -d --name java-app-$env-$Tags -p 3001:8080 $registry/$env:$Tags "   
 }
-
-void versiontags() {
+void versiontags(Tags) {
     def tag= "Rleease-V-$Tags-0.0"
    return tag
 }
