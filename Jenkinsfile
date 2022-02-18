@@ -13,6 +13,7 @@ pipeline{
         Tags= '$BUILD_NUMBER'
         dockerHubRegistryID = 'sagarppatil27041992'
         versionTags= versiontags(Tags)
+        //anchoreUrl = "http://localhost:8228/v1"
     }
     
     stages{
@@ -130,7 +131,7 @@ pipeline{
                 }
             }
         }
-       /*  stage('Push GitTag') {
+        stage('Push GitTag') {
             when {
                 branch 'main'
             }
@@ -140,7 +141,7 @@ pipeline{
                    sh "git push origin $versionTags"
                 }
             }
-        } */
+        }
         stage ("BuildDockerImage") {
             when {
                 branch 'main'   
@@ -156,6 +157,20 @@ pipeline{
                 
             }
         }
+        //anchore engine security scanner
+       /* stage('Anchore analyse') {
+            when {
+                branch 'main'
+            }
+            options { skipDefaultCheckout() }
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
+                {
+                sh "echo $registry/$qa:$Tags ${WORKSPACE}/Dockerfile > anchore_images"
+                anchore name:'anchore_images', engineurl:"$anchoreUrl", engineCredentialsId:'anchore-engine', bailOnFail: false
+                }
+            }
+        } */
     }
 
 }
