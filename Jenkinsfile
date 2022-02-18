@@ -4,29 +4,59 @@ pipeline{
     tools {
         jdk 'jdk-8'
         maven 'maven-3.8'
+        // tool we configured in jenkins we are providing there name here
+    }
+    environment {
+        dev= 'develop'
+        qa= 'main'
+        staging='stage'
+        Tags= '$BUILD_NUMBER'
+        dockerHubRegistryID = 'sagarppatil27041992'
+        versionTags= versiontags(Tags)
+        //anchoreUrl = "http://localhost:8228/v1"
     }
     
     stages{
-        stage("build"){
+        stage("Dev-build"){
+            when {
+                branch 'develop'    
+            }
             steps{
                withMaven (maven:'maven-3.8') {
                    sh "mvn clean install -DskipTests"
+                   // we package the artifact jar of our java project and skip all the test with maven goal "maven clean install -DskipTests"
                }
             }
         }
-        stage("Unit test"){
+        stage("Dev-Unit test"){
+            when {
+                branch 'develop'   
+            }
+            options { skipDefaultCheckout() }
             steps{
                sh "mvn test"
+               // here we perform all unit test cases
             }
         }
-        stage("Integration test"){
+        stage("Dev-Integration test"){
+            when {
+                branch 'develop'   
+            }
+            options { skipDefaultCheckout() }
             steps{
                sh "mvn verify -DskipUnitTests"
+               // here we perform all integration test with maven goal "mvn verify -DskipUnitTests" and skip again all unit test cases
+
             }
         }
-        stage ("static code analysis"){
+        stage ("Dev-static code analysis"){
+            when {
+                branch 'develop'   
+            }
+            options { skipDefaultCheckout() }
             steps {
                 sh "mvn checkstyle:checkstyle"
+                // here we perform the checkstyle static code analysis with maven goal "mvn checkstyle:checkstyle"
             }
             post {
                 success {
@@ -34,13 +64,17 @@ pipeline{
                 }
             }
         }
-         stage('CODE ANALYSIS with SONARQUBE') {
-          environment {
+         stage('DEV-CODE ANALYSIS with SONARQUBE') {
+            when {
+                branch 'develop'   
+            }
+            options { skipDefaultCheckout() }
+            environment {
              scannerHome = tool 'sonarscanner4'
             }
-          steps {
-             withSonarQubeEnv('sonar-qube') {
-                 sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=petclinic \
+            steps {
+                withSonarQubeEnv('sonar-qube') {
+                    sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=petclinic \
                    -Dsonar.projectName=petclinic \
                    -Dsonar.projectVersion=1.0 \
                    -Dsonar.sources=src/ \
@@ -48,35 +82,126 @@ pipeline{
                    -Dsonar.junit.reportsPath=target/surefire-reports/ \
                    -Dsonar.jacoco.reportsPath=target/jacoco.exec \
                    -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
+
+                // we ferform code analysis using sonarqube by passing the unit test cases result, checkstyle result for uploading and doing code analysis
               }
-             timeout(time: 10, unit: 'MINUTES') {
+            timeout(time: 10, unit: 'MINUTES') {
                waitForQualityGate abortPipeline: true
-             }
+               // here we wait for quality gates from sonar server
+            }
           }
         }
 
-        stage ("docker build") {
+        stage ("Dev-docker build") {
+            when {
+                branch 'develop'   
+            }
+            options { skipDefaultCheckout() }
             steps{
-                sh "sudo docker build -t sagarppatil27041992/stage:'${env.BUILD_NUMBER}' ."
+                imageBuild(dockerHubRegistryID,dev,Tags) // calling image build function to build image for dev envoirment
             }
         }
-        stage('Docker Publish') {
-           steps {
+        stage('Dev-Docker Publish') {
+            when {
+                branch 'develop'   
+            }
+            options { skipDefaultCheckout() }
+            steps {
                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
-                   sh "sudo docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
-                   sh "sudo docker push sagarppatil27041992/stage:'${env.BUILD_NUMBER}' "
+                   // calling pushToImage function to push image for dev envoirment to dockerhub registry
+                    pushToImage(dockerHubRegistryID,dev,dockerHubUser,dockerHubPassword,Tags)
+                
+                    // remove the image once its pushed to dockerhub registry from local
+                    deleteImages(dockerHubRegistryID,dev,Tags) 
+
                 }
             }
         }
 
-        stage('Deploy') {
-           steps {
+        stage('Dev-Deploy') {
+            when {
+                branch 'develop'   
+            }
+            options { skipDefaultCheckout() }
+            steps {
                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
-                   sh "sudo docker login -u ${env.dockerHubUser} -p ${env.dockerHubPassword}"
-                   sh "sudo docker run -d --name java-app-${env.BUILD_NUMBER}  -p 3002:8080 sagarppatil27041992/stage:'${env.BUILD_NUMBER}' "
+                   
+                   // we run the docker imaage  that we build in privious steps 
+                    deploy(dockerHubRegistryID,dev,dockerHubUser,dockerHubPassword,Tags)
                 }
             }
         }
+        stage('Push GitTag') {
+            when {
+                branch 'main'
+            }
+            steps {
+                withCredentials([gitUsernamePassword(credentialsId: 'github-cred', gitToolName: 'Default')]) {
+                   sh  "git tag $versionTags"
+                   sh "git push origin $versionTags"
+                }
+            }
+        }
+        stage ("BuildDockerImage") {
+            when {
+                branch 'main'   
+            }
+            steps{
+                // we build the docker image of our apllication and tageed that image with build no env variable
+                //sh "sudo docker build -t sagarppatil27041992/develop:'${env.BUILD_NUMBER}' ."
+                withMaven (maven:'maven-3.8') {
+                   sh "mvn clean install -DskipTests"
+                   // we package the artifact jar of our java project and skip all the test with maven goal "maven clean install -DskipTests"
+                }
+                imageBuild(dockerHubRegistryID,qa,Tags) // calling image build function
+                
+            }
+        }
+        //anchore engine security scanner
+       /* stage('Anchore analyse') {
+            when {
+                branch 'main'
+            }
+            options { skipDefaultCheckout() }
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
+                {
+                sh "echo $registry/$qa:$Tags ${WORKSPACE}/Dockerfile > anchore_images"
+                anchore name:'anchore_images', engineurl:"$anchoreUrl", engineCredentialsId:'anchore-engine', bailOnFail: false
+                }
+            }
+        } */
     }
 
+}
+
+// define function to build docker images
+void imageBuild(registry,env,Tags) {
+    
+    sh "sudo docker build --rm -t $registry/$env:$Tags --pull --no-cache . "
+    echo "Image build complete"
+}
+
+
+// define function to push images
+void pushToImage(registry,env,dockerUser,dockerPassword,Tags) {
+    
+    sh "sudo docker login -u $dockerUser -p $dockerPassword " 
+    sh "sudo docker push $registry/$env:$Tags"
+    echo "Image Push $registry/$env:$Tags completed"
+}
+
+void deleteImages(registry,env,Tags) {
+
+    sh "sudo docker rmi $registry/$env:$Tags"
+    echo "Images deleted"
+}
+
+void deploy(registry,env,dockerUser,dockerPassword,Tags){
+    sh "sudo docker login -u $dockerUser -p $dockerPassword "
+    sh "sudo docker run -d --name java-app-$env-$Tags -p 3001:8080 $registry/$env:$Tags "   
+}
+void versiontags(Tags) {
+    def tag= "Rleease-V-$Tags-0.0"
+   return tag
 }
