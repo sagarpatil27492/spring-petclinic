@@ -45,8 +45,7 @@ pipeline{
             options { skipDefaultCheckout() }
             steps{
                sh "mvn verify -DskipUnitTests"
-               // here we perform all integration test with maven goal "mvn verify -DskipUnitTests" and skip again all unit test cases
-
+              // here we perform all integration test with maven goal "mvn verify -DskipUnitTests" and skip again all unit test cases
             }
         }
         stage ("Dev-static code analysis"){
@@ -56,7 +55,7 @@ pipeline{
             options { skipDefaultCheckout() }
             steps {
                 sh "mvn checkstyle:checkstyle"
-                // here we perform the checkstyle static code analysis with maven goal "mvn checkstyle:checkstyle"
+               // here we perform the checkstyle static code analysis with maven goal "mvn checkstyle:checkstyle"
             }
             post {
                 success {
@@ -83,7 +82,7 @@ pipeline{
                    -Dsonar.jacoco.reportsPath=target/jacoco.exec \
                    -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
 
-                // we ferform code analysis using sonarqube by passing the unit test cases result, checkstyle result for uploading and doing code analysis
+               // we perform code analysis using sonarqube by passing the unit test cases result, checkstyle result for uploading and doing code analysis
               }
             timeout(time: 10, unit: 'MINUTES') {
                waitForQualityGate abortPipeline: true
@@ -98,7 +97,7 @@ pipeline{
             }
             options { skipDefaultCheckout() }
             steps{
-                imageBuild(dockerHubRegistryID,dev,Tags) // calling image build function to build image for dev envoirment
+                imageBuild(dockerHubRegistryID,dev,Tags) // calling image build function to build image for dev environment
             }
         }
         stage('Dev-Docker Publish') {
@@ -108,10 +107,11 @@ pipeline{
             options { skipDefaultCheckout() }
             steps {
                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
-                   // calling pushToImage function to push image for dev envoirment to dockerhub registry
-                    pushToImage(dockerHubRegistryID,dev,dockerHubUser,dockerHubPassword,Tags)
+                   
+                    // calling pushToImage function to push image for dev environment to docker hub registry
+                     pushToImage(dockerHubRegistryID,dev,dockerHubUser,dockerHubPassword,Tags)
                 
-                    // remove the image once its pushed to dockerhub registry from local
+                   // remove the image once its pushed to dockerhub registry from local
                     deleteImages(dockerHubRegistryID,dev,Tags) 
 
                 }
@@ -126,7 +126,7 @@ pipeline{
             steps {
                withCredentials([usernamePassword(credentialsId: 'dockerHub', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
                    
-                   // we run the docker imaage  that we build in privious steps 
+                  // we run the docker image  that we build in previous steps by pulling it from docker hub registry
                     deploy(dockerHubRegistryID,dev,dockerHubUser,dockerHubPassword,Tags)
                 }
             }
@@ -138,7 +138,9 @@ pipeline{
             steps {
                 withCredentials([gitUsernamePassword(credentialsId: 'github-cred', gitToolName: 'Default')]) {
                    sh  "git tag $versionTags"
+                   // here we tag master branch
                    sh "git push origin $versionTags"
+                   // here push the git tag
                 }
             }
         }
@@ -147,13 +149,12 @@ pipeline{
                 branch 'main'   
             }
             steps{
-                // we build the docker image of our apllication and tageed that image with build no env variable
-                //sh "sudo docker build -t sagarppatil27041992/develop:'${env.BUILD_NUMBER}' ."
                 withMaven (maven:'maven-3.8') {
                    sh "mvn clean install -DskipTests"
                    // we package the artifact jar of our java project and skip all the test with maven goal "maven clean install -DskipTests"
                 }
-                imageBuild(dockerHubRegistryID,qa,Tags) // calling image build function
+                imageBuild(dockerHubRegistryID,qa,Tags) 
+                // calling image build function for qa env
                 
             }
         }
@@ -191,16 +192,21 @@ void pushToImage(registry,env,dockerUser,dockerPassword,Tags) {
     echo "Image Push $registry/$env:$Tags completed"
 }
 
+// function to delete image from local
+
 void deleteImages(registry,env,Tags) {
 
     sh "sudo docker rmi $registry/$env:$Tags"
     echo "Images deleted"
 }
 
+// function to deploy a container to an environment by pulling the image from docker hub registry
 void deploy(registry,env,dockerUser,dockerPassword,Tags){
     sh "sudo docker login -u $dockerUser -p $dockerPassword "
     sh "sudo docker run -d --name java-app-$env-$Tags -p 3001:8080 $registry/$env:$Tags "   
 }
+
+// function to deploy a container to an environment by pulling the image from docker hub registry
 void versiontags(Tags) {
     def tag= "Rleease-V-$Tags-0.0"
    return tag
